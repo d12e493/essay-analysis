@@ -1,19 +1,27 @@
-package controller;
+package davis.controller;
 
-import com.huaban.analysis.jieba.JiebaSegmenter;
-import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
+import davis.bo.Match;
+import edu.stanford.nlp.trees.LabeledScoredTreeNode;
 import edu.stanford.nlp.trees.Tree;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
+import edu.stanford.nlp.util.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import davis.service.ParserService;
+import davis.service.RuleService;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 public class EssayController {
+
+    @Autowired
+    private ParserService parseService;
+
+    @Autowired
+    private RuleService ruleService;
 
     @RequestMapping("/")
     @ResponseBody
@@ -31,6 +39,8 @@ public class EssayController {
                 "勞動調解委員會得依職權提出解決紛爭方案，如當事人未異議，即視為調解成立，以擴大勞動調解弭平紛爭之成效；如勞動調解不成立，調解聲請人未為反對續行訴訟，即應由參與勞動調解的法官續行訴訟，以一次辯論終結為原則。\n" +
                 "司法院指出，為了減少勞工的訴訟障礙，勞工得於我國勞務提供地法院起訴，其被訴時亦得聲請移送至其選定有管轄權的法院；減徵或暫免徵收勞工起訴、上訴及聲請強制執行之裁判費、執行費；勞工得偕同所屬工會選派之適當人員到場擔任輔佐人；雇主就其依法令應備置之文書有提出之義務，同時強化當事人與第三人提出所持有證據方法或資料之責任，及減輕勞工關於工資及工作時間等事實之舉證責任。";
 
+        List<String> notMatchString = new ArrayList<String>();
+
         System.out.println("before split");
         System.out.println(essay);
 
@@ -40,35 +50,58 @@ public class EssayController {
 
         System.out.println("after split");
 
-        JiebaSegmenter segmenter = new JiebaSegmenter();
-
         for(String e:essays){
-            System.out.println(e);
-            System.out.println(segmenter.process(e, JiebaSegmenter.SegMode.INDEX).toString());
+        // 進行斷詞
+            System.out.println("斷詞前："+e);
+
+            List list = parseService.segment(e);
+            System.out.println(list);
+
+            String afterE = StringUtils.join(list," ");
+
+            System.out.println("斷詞後："+afterE);
+
+            Tree parse = parseService.parse(afterE);
+
+            System.out.println("Stanford Parser：");
+            System.out.println(parse);
+
+            List<Match> matchList = ruleService.matchCheck(parse.toString());
+            System.out.println("Rule match：");
+            if(matchList.size()>0){
+                System.out.println("有比對到");
+                System.out.println(matchList);
+            }else{
+                System.out.println("無任何規則配對到");
+                notMatchString.add(e);
+            }
+            System.out.println("------------------------------------------------------------");
         }
-
-        Resource resource = new ClassPathResource("chinesePCFG.ser.gz");
-
-        System.out.println("start stanford parser!!");
-
-        // 進行 stanford parser
-        LexicalizedParser lp = null;
-        try {
-            lp = LexicalizedParser.loadModel(resource.getURL().toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-//        for(String e:essays){
-//            Tree parse = lp.parse(e);
-//            System.out.println(parse);
-//        }
-
-        essay="俄国 希望 伊朗 没有 制造 核武器 计划";
-
-        Tree parse = lp.parse(essay);
-//        System.out.println(parse);
 
         return "ok";
+    }
+    private List<Tree> getNodeList(Tree parse){
+        List<Tree> list = recursive(parse);
+        return list;
+    }
+
+    private List<Tree> recursive(Tree tree){
+        List<Tree> list = new ArrayList<>();
+
+        LabeledScoredTreeNode treeNode = (LabeledScoredTreeNode)tree;
+
+        LabeledScoredTreeNode node = new LabeledScoredTreeNode();
+        node.setLabel(treeNode.label());
+        node.setValue(treeNode.value());
+
+        list.add(node);
+
+        if (tree.getChildrenAsList().size() > 0) {
+            tree.getChildrenAsList().forEach(t -> {
+                list.addAll(recursive(t));
+            });
+        }
+
+        return list;
     }
 }
