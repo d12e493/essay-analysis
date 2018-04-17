@@ -13,7 +13,6 @@ plugins {
 group 'edu.nccu.essay'
 version '1.0-SNAPSHOT'
 
-
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'org.springframework.boot'
@@ -21,6 +20,9 @@ apply plugin: 'io.spring.dependency-management'
 
 sourceCompatibility = 1.8
 
+bootRun{
+    sourceResources sourceSets.main
+}
 repositories {
     mavenCentral()
 }
@@ -28,10 +30,12 @@ repositories {
 dependencies {
     compile("org.springframework.boot:spring-boot-starter-web")
     compile("org.springframework.boot:spring-boot-starter-data-jpa")
+    compile("org.springframework.boot:spring-boot-starter-thymeleaf")
+    compile("org.springframework.boot:spring-boot-devtools")
     compile('mysql:mysql-connector-java:6.0.6')
     compile group: 'edu.stanford.nlp', name: 'stanford-parser', version: '3.6.0'
     compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '3.6.0'
-    compileOnly 'org.projectlombok:lombok:1.16.20'
+    compile 'org.projectlombok:lombok:1.16.20'
     apt "org.projectlombok:lombok:1.16.20"
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

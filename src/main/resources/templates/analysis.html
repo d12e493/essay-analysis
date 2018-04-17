@@ -1,0 +1,18 @@
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Analysis Index</title>
+    <meta charset="UTF-8">
+    <script type="text/javascript" th:src="@{/js/jquery-3.3.1.min.js}" ></script>
+    <script type="text/javascript" th:src="@{/js/analysis.js}" ></script>
+</head>
+<body>
+<h1>測試輸入文字</h1>
+<textarea cols="200" rows="15" id="inputText"></textarea>
+<button type="button" onclick="analysis();">分析</button>
+<hr/>
+<h1>顯示配對結果</h1>
+<div id="resp">
+
+</div>
+</body>
+</html>
